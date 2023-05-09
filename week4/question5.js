@@ -1,48 +1,64 @@
-class Account {
-  static accounts = {}
+const readline = require("readline");
 
-  constructor(firstName, lastName, accountNumber, phoneNumber) {
-      this.firstName = firstName;
-      this.lastName = lastName;
-      this.accountNumber = accountNumber;
-      this.phoneNumber = phoneNumber;
-      this.balance = 0;
-      this.transactions = [];
-      Account.accounts[accountNumber] = this;
-  }
-  
-  getBalance(accountNumber) {
-    let account = Account.accounts[accountNumber.toString()];
-    return account.balance;
-  }
-  
-  getAccountDetails(accountNumber) {
-    let account = Account.accounts[accountNumber.toString()];
-    return {firstName: account.firstName, lastName: account.lastName, phoneNumber: account.phoneNumber}
-  }
-  
-  changePhoneNumber(accountNumber, phoneNumber) {
-    accountNumber = accountNumber.toString();
-    let account = Account.accounts[accountNumber.toString()];
-    account.phoneNumber = phoneNumber;
-    Account.accounts[accountNumber] = account;
-  }
-  
-  debit(accountNumber, amount) {
-    accountNumber = accountNumber.toString();
-    let account = Account.accounts[accountNumber.toString()];
-    account.balance += amount;
-    account.transactions.push({type: "debit", amount});
-    Account.accounts[accountNumber] = account;
-  }
-  
-  credit(accountNumber, amount) {
-    accountNumber = accountNumber.toString();
-    let account = Account.accounts[accountNumber.toString()];
-    account.balance -= amount;
-    account.transactions.push({type: "credit", amount});
-    Account.accounts[accountNumber] = account;
-  }
+class Account {
+    static accounts = {}
+
+    constructor(firstName, lastName, accountNumber, phoneNumber) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.accountNumber = accountNumber;
+        this.phoneNumber = phoneNumber;
+        this.balance = 0;
+        this.transactions = [];
+        Account.accounts[accountNumber] = this;
+    }
+
+    static getBalance(accountNumber) {
+        let account = Account.accounts[accountNumber.toString()];
+        return account.balance;
+    }
+
+    static getAccountDetails(accountNumber) {
+        let account = Account.accounts[accountNumber.toString()];
+        return account;
+    }
+
+    static changePhoneNumber(accountNumber, phoneNumber) {
+        accountNumber = accountNumber.toString();
+        let account = Account.accounts[accountNumber];
+        account.phoneNumber = phoneNumber;
+        Account.accounts[accountNumber] = account;
+    }
+
+    static debit(accountNumber, amount) {
+        accountNumber = accountNumber.toString();
+        let account = Account.accounts[accountNumber];
+        account.balance -= parseFloat(amount);
+        account.transactions.unshift({ type: "debit", amount });
+        Account.accounts[accountNumber] = account;
+    }
+
+    static credit(accountNumber, amount) {
+        accountNumber = accountNumber.toString();
+        let account = Account.accounts[accountNumber];
+        account.balance += parseFloat(amount);
+        account.transactions.unshift({ type: "credit", amount });
+        Account.accounts[accountNumber] = account;
+    }
+
+    static accountExist(accountNumber) {
+        if (Account.accounts[accountNumber.toString()]) {
+            return true;
+        }
+        return false;
+    }
+
+    static checkPhoneNumber(accountNumber, phoneNumber) {
+        if (Account.accounts[accountNumber.toString()] == phoneNumber) {
+            return true;
+        }
+        return false;
+    }
 }
 
 accountCsv = `First Name,Last Name,Account Number,Phone Number
@@ -60,8 +76,8 @@ Emeka,Oyelude,6701,08190576207`
 accountsLines = accountCsv.trim().split("\n");
 
 for (let i = 1; i < accountsLines.length; i++) {
-  const fields = accountsLines[i].split(",");
-  new Account(fields[0], fields[1], fields[2], fields[3]);
+    const fields = accountsLines[i].split(",");
+    new Account(fields[0], fields[1], fields[2], fields[3]);
 }
 
 transactionCsv = `SN,Account Number,Amount,Credit/Debit
@@ -119,16 +135,119 @@ transactionCsv = `SN,Account Number,Amount,Credit/Debit
 
 transactionsLines = transactionCsv.trim().split("\n");
 for (let i = 1; i < transactionsLines.length; i++) {
-  const fields = transactionsLines[i].split(",");
-  if (fields[3] == "Debit") {
-    Account.debit(fields[1], fields[2]);
-  } else {
-    Account.credit(fields[1], fields[2]);
-  }
+    const fields = transactionsLines[i].split(",");
+    if (fields[3] == "Debit") {
+        // console.log(fields[1], "previous balance:", Account.getBalance(fields[1]))
+        Account.debit(fields[1], fields[2]);
+        // console.log("debit", fields[[2]])
+        // console.log(fields[1], "new balance:", Account.getBalance(fields[1]), "\n")
+    } else {
+        // console.log(fields[1], "previous balance:", Account.getBalance(fields[1]))
+        Account.credit(fields[1], fields[2]);
+        // console.log("credit", fields[[2]])
+        // console.log(fields[1], "new balance:", Account.getBalance(fields[1]), "\n")
+    }
 }
 
 
+// Create a readline interface
+const readInterface = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+});
 
-let account = Account.getAccountDetails(6807);
+readInterface.setPrompt(`=========USSD APPLICATION MAIN MENU=========
+1. Check account balance
+2. Check account details
+3. Print last 3 transactions
+4. Change phone number\n
+`);
 
-console.log(`The account details for account number ${accountNumber} is : ['First Name: ${account.firstName}', 'Last Name: ${account.lastName}', 'Phone Number: ${account.phoneNumber}']`)
+
+readInterface.on("line", (word) => {
+    if (word === "exit") {
+        readInterface.close();
+        return;
+    }
+
+    if (word == "1") {
+        readInterface.question("Enter account number: ", (accountNumber) => {
+            if (!Account.accountExist(accountNumber)) {
+                console.log("Invalid account number!\n");
+            } else {
+                console.log("\n========ACCOUNT BALANCE=======")
+                let account = Account.getAccountDetails(accountNumber);
+                console.log(`The account balance for ${account.firstName} ${account.lastName} is: ${account.balance}\n`);
+            }
+            readInterface.prompt();
+        })
+    } else if (word == "2") {
+        readInterface.question("Enter account number: ", (accountNumber) => {
+            if (!Account.accountExist(accountNumber)) {
+                console.log("Invalid account number!\n");
+            } else {
+                console.log("\n========ACCOUNT DETAILS=======")
+                let account = Account.getAccountDetails(accountNumber);
+                console.log(`The account details for account number ${accountNumber} is : [‘First Name: ${account.firstName}’, ‘Last Name: ${account.lastName}’, ‘Phone Number: ${account.phoneNumber}’]\n`);
+            }
+            readInterface.prompt();
+        })
+    } else if (word == "3") {
+        readInterface.question("Enter account number: ", (accountNumber) => {
+            if (!Account.accountExist(accountNumber)) {
+                console.log("Invalid account number!\n");
+            } else {
+                let transactions = Account.getAccountDetails(accountNumber).transactions;
+
+                console.log("\n======RECENT TRANSACTIONS======\n")
+                console.log(`--------------------------------------
+|  Amount      |    Transaction Type |
+--------------------------------------
+|  ${transactions[1].amount}        |    ${transactions[1].type}           |
+--------------------------------------
+|  ${transactions[2].amount}        |    ${transactions[2].type}           |
+--------------------------------------
+|  ${transactions[3].amount}        |    ${transactions[3].type}            |
+--------------------------------------
+`, '\n');
+            }
+            readInterface.prompt();
+        })
+    } else if (word == "4") {
+        readInterface.question("Enter account number: ", (accountNumber) => {
+            if (!Account.accountExist(accountNumber)) {
+                console.log("Invalid account number!\n");
+            } else {
+                let account = Account.getAccountDetails(accountNumber);
+                console.log("\n=====CHANGE PHONE NUMBER====")
+                readInterface.question("Enter previous number: ", (previousNumber) => {
+                    if (account.phoneNumber != previousNumber) {
+                        console.log(`Invalid phone number. This is not the correct phone number for ${account.firstName} ${account.lastName}. Please enter the correct phone number.\n`);
+                    } else {
+                        readInterface.question("Enter the new number: ", (newNumber) => {
+                            Account.changePhoneNumber(accountNumber, newNumber);
+                            console.log("Your new number has been changed.\n")
+                        })
+                    }
+                    readInterface.prompt();
+                })
+            }
+            readInterface.prompt();
+        })
+    } else {
+        console.log("Invalid input\n")
+    }
+    readInterface.prompt();
+}).on("close", () => {
+    console.log("Exiting program.");
+    process.exit(0);
+});
+
+readInterface.prompt();
+
+
+// console.log(Account.getBalance(3587))
+// let account = Account.getAccountDetails(6807);
+// console.log(account)
+
+// console.log(`The account details for account number 3587 is : ['First Name: ${account.firstName}', 'Last Name: ${account.lastName}', 'Phone Number: ${account.phoneNumber}']`)
