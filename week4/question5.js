@@ -244,10 +244,3 @@ readInterface.on("line", (word) => {
 });
 
 readInterface.prompt();
-
-
-// console.log(Account.getBalance(3587))
-// let account = Account.getAccountDetails(6807);
-// console.log(account)
-
-// console.log(`The account details for account number 3587 is : ['First Name: ${account.firstName}', 'Last Name: ${account.lastName}', 'Phone Number: ${account.phoneNumber}']`)

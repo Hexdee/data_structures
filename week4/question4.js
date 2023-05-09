@@ -31,8 +31,5 @@ rl.question('Enter a string of letters: ', (input) => {
 
     console.log(`Matching words are [${validWords}] unused letters are ‘${letters.join("")}’.`);
 
-    // : ${validWords.join(', ')}`);
-    // console.log(`Unused letters: ${letters.filter(letter => !usedLetters.has(letter)).join(', ')}`);
-
     rl.close();
 });
